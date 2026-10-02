@@ -1,6 +1,8 @@
 import { Gender, Role, System } from "../../common/enums"
 import {  HydratedDocument, model , Schema } from "mongoose"
 import { IUser } from "../../common/interfaces/user.interface"
+import { hash } from  "../../common/utils/hash"
+import { encrypt } from "../../common/utils/encrypt"
 
 
 
@@ -72,6 +74,10 @@ const userSchema = new Schema<IUser>({
     },
     phone:{
         type:String
+    },
+    changeConditional:Date ,
+    oldPasswords:{
+        type:[String]
     }
 
 },{
@@ -94,6 +100,16 @@ userSchema
     this.fName = val.split(" ")[0] || "",
     this.lName = val.split(" ")[1] || ""
  })
+
+userSchema.pre("save",async function (){
+    if(this.isModified("password")){
+        this.password = await hash({plainText:this.password})
+    }
+    
+     if (this.phone && this.isModified("phone")) {
+          this.phone = encrypt(this.phone)
+    }
+} )
 
  const User = model<IUser>("User",userSchema)
  export type UserHydrated = HydratedDocument<IUser> 

@@ -14,7 +14,7 @@ const bootstrap = async ()=>{
 
    
     await DBconnection();
-    // await redisService.connection()  
+    await redisService.connection()  
 
     app.get("/",(req:Request ,res:Response , next:NextFunction):void=>{
         res.status(200).json({

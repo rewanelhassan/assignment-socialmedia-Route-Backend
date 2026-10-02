@@ -15,6 +15,8 @@ export type IUser ={
         country:string,
     },
     isActive:boolean,
+    changeConditional:Date ,
+    oldPasswords:string[],
 
     role:Role,
     gender:Gender,

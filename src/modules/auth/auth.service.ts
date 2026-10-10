@@ -64,10 +64,10 @@ class AuthService {
       throw new ConflictException("email already exists");
     }
 
-    data.password = await hash({ plainText: password });
-    if (data.phone) {
-      data.phone = encrypt(data.phone);
-    }
+    // data.password = await hash({ plainText: password });
+    // if (data.phone) {
+    //   data.phone = encrypt(data.phone);
+    // }
 
     const user = await this.userRepo.create({
       data: {

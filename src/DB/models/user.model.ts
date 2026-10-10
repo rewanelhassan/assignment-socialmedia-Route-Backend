@@ -111,6 +111,15 @@ userSchema.pre("save",async function (){
     }
 } )
 
+userSchema.pre("insertMany", async function (docs:any){
+    for(let index of docs){
+        index.password= await hash({plainText:index.password})
+    }
+})
+// userSchema.pre( "findOne", async function (docs:any){
+//     this.select("-password")
+// })
+
  const User = model<IUser>("User",userSchema)
  export type UserHydrated = HydratedDocument<IUser> 
  export default User ;

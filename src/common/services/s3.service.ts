@@ -4,12 +4,17 @@ import {
   PutObject$,
   PutObjectCommand,
   ObjectCannedACL,
+  GetObjectCommand,
+  DeleteObjectsCommand,
+  DeleteObjectCommand
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Upload } from "@aws-sdk/lib-storage";
 import { randomUUID } from "node:crypto";
 import { BadRequestException } from "../response";
 import { StorageTypeEnum } from "../enums/storage";
 import { createReadStream } from "node:fs";
+import { boolean } from "zod";
 
 class S3Service {
   private client: S3Client;
@@ -31,7 +36,6 @@ class S3Service {
     ACL = "private",
     contentType,
     StorageType,
-    
   }: {
     file: Express.Multer.File;
     bucket?: string;
@@ -40,7 +44,6 @@ class S3Service {
     ACL?: ObjectCannedACL;
     contentType?: string;
     StorageType: StorageTypeEnum;
-   
   }) {
     const uploadOptions = {
       Bucket: bucket,
@@ -64,6 +67,37 @@ class S3Service {
 
     return command.input.Key;
   }
+  async uploadFiles({
+    files,
+    bucket = process.env.BUCKET_NAME as string,
+    folder = "general",
+    path = "",
+    ACL = "private",
+    contentType,
+    StorageType,
+  }: {
+    files: Express.Multer.File[];
+    bucket?: string;
+    folder: string;
+    path: string;
+    ACL?: ObjectCannedACL;
+    contentType?: string;
+    StorageType: StorageTypeEnum;
+  }) {
+    const urls = await Promise.all([
+      files.map(async (file) => {
+        const uploadedFile = await this.uploadFile({
+          file,
+          bucket,
+          folder,
+          path,
+          StorageType,
+        });
+        return uploadedFile;
+      }),
+    ]);
+    return urls;
+  }
   async uploadLargeFile({
     file,
     bucket = process.env.BUCKET_NAME as string,
@@ -72,7 +106,7 @@ class S3Service {
     ACL = "private",
     contentType,
     StorageType,
-    partSize = 5 
+    partSize = 5,
   }: {
     file: Express.Multer.File;
     bucket?: string;
@@ -81,7 +115,7 @@ class S3Service {
     ACL?: ObjectCannedACL;
     contentType?: string;
     StorageType: StorageTypeEnum;
-     partSize?:number
+    partSize?: number;
   }) {
     const parallelUploads3 = new Upload({
       client: this.client,
@@ -96,10 +130,9 @@ class S3Service {
         ContentType: file.mimetype || contentType,
       },
 
-      queueSize: 4,//كام طابور
-      partSize: 1024 * 1024 * partSize,//حجم الchuckفي الطابور
+      queueSize: 4, //كام طابور
+      partSize: 1024 * 1024 * partSize, //حجم الchuckفي الطابور
       leavePartsOnError: false,
-
     });
 
     parallelUploads3.on("httpUploadProgress", (progress) => {
@@ -112,6 +145,105 @@ class S3Service {
     }
 
     return result.Key;
+  }
+  async uploadPresignedFile({
+    fileName,
+    bucket = process.env.BUCKET_NAME as string,
+    folder = "general",
+    path = "",
+    contentType,
+  }: {
+    fileName: string;
+    bucket?: string;
+    folder: string;
+    path: string;
+    contentType?: string;
+  }) {
+    const uploadOptions = {
+      Bucket: bucket,
+      Key: `social_media/${folder}/${path}/${randomUUID()}-${fileName}`,
+      contentType: "image/png",
+    };
+    const command = new PutObjectCommand(uploadOptions);
+    if (!command.input.Key) {
+      throw new BadRequestException("faild to upload");
+    }
+    const presigned = await getSignedUrl(this.client, command, {
+      expiresIn: 60,
+    });
+
+    return { presigned, key: command.input.Key };
+  }
+
+  async getFile({
+    bucket = process.env.BUCKET_NAME as string,
+    fileName,
+  }: {
+    bucket?: string;
+    fileName: string;
+  }) {
+    const command = new GetObjectCommand({
+      Key: fileName,
+      Bucket: bucket,
+    });
+
+    const result = await this.client.send(command);
+    return result;
+  }
+  async getPresignedFile({ // override disadventage
+    bucket = process.env.BUCKET_NAME as string,
+    fileName,
+    download = false,
+  }: {
+    bucket?: string;
+    fileName: string;
+    download?: boolean;
+  }) {
+    const command = new GetObjectCommand({
+      Key: fileName,
+      Bucket: bucket,
+      ResponseContentDisposition:
+        download == true
+          ? `attachment;filename= ${fileName.split("/").pop()}`
+          : undefined,
+    });
+
+    const presigned = await getSignedUrl(this.client, command, {
+      expiresIn: 60,
+    });
+    return presigned;
+  }
+  async deletFile({
+    bucket = process.env.BUCKET_NAME as string,
+    fileName,
+  }: {
+    bucket?: string;
+    fileName: string;
+  }) {
+    const command = new DeleteObjectCommand({
+      Key: fileName,
+      Bucket: bucket,
+    });
+
+    const result = await this.client.send(command);
+    return result;
+  }
+  async deletFiles({
+    bucket = process.env.BUCKET_NAME as string,
+    files,
+  }: {
+    bucket?: string;
+    files: string[];
+  }) {
+    const command = new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: {
+        Objects: files.map((e) => ({ Key: e })),
+      },
+    });
+
+    const result = await this.client.send(command);
+    return result;
   }
 }
 

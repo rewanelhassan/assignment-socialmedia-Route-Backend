@@ -7,7 +7,9 @@ export const loginSchema =
 {
 body:z.strictObject({
   email: z.email({error: "invalid email"}),
-  password: z.string()
+  password: z.string(),
+  FCM_Token:z.string().optional(),
+
 }).superRefine((val,ctx)=>{
     if(val.email.length >= 50){
         ctx.addIssue({

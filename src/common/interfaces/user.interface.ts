@@ -1,3 +1,4 @@
+import { Types } from "mongoose"
 import { Gender, Role, System } from "../../common/enums"
 export type IUser ={
     fName:string ,
@@ -17,6 +18,7 @@ export type IUser ={
     isActive:boolean,
     changeConditional:Date ,
     oldPasswords:string[],
+    friends:Types.ObjectId[],
 
     role:Role,
     gender:Gender,

@@ -8,11 +8,15 @@ import { DBconnection } from "./DB/connection";
 import redisService from "./common/services/redis.service";
 import s3Service from "./common/services/s3.service";
 import { pipeline } from "node:stream/promises";
+import cors from "cors";
+import notificationService from "./common/services/notification.service";
+import postRouter from "./modules/post/post.controller";
 
 const bootstrap = async () => {
   config();
   const app: Express = express();
   app.use(express.json());
+  app.use(cors());
 
   await DBconnection();
   await redisService.connection();
@@ -51,7 +55,7 @@ const bootstrap = async () => {
         const path = (req.params.path as string[]).join("/");
         const result = await s3Service.getPresignedFile({
           fileName: path,
-          download:false,
+          download: false,
         });
         res.status(200).json({ result });
       } catch (error) {
@@ -59,6 +63,20 @@ const bootstrap = async () => {
       }
     },
   );
+
+  // app.post("/", async (req: Request, res: Response, next: NextFunction) => {
+  //   console.log({token :req.body });
+     
+  //   await notificationService.sendNotification({
+  //     token: req.body.token,
+  //     title: "test",
+  //     data: "hello notification",
+  //   });
+  //   res.status(200).json({
+  //     message: "hello TS",
+  //   });
+  // });
+ 
 
   app.get("/", (req: Request, res: Response, next: NextFunction): void => {
     res.status(200).json({
@@ -68,6 +86,7 @@ const bootstrap = async () => {
 
   app.use("/auth", authRouter);
   app.use("/user", userRouter);
+  app.use("/post", postRouter);
   app.use(globalError);
 
   app.listen(8000, () => {

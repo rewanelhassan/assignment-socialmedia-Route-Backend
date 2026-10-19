@@ -13,16 +13,21 @@ import { UserRepository } from "../../DB/repo/user.repository";
 import { ILogin, ISignup } from "./dto/auth.dto";
 import tokenService from "../../common/services/token.service.js";
 import redisService from "../../common/services/redis.service.js";
+import notificationService from "../../common/services/notification.service";
+import { title } from "node:process";
 
 class AuthService {
   private userRepo: UserRepository;
   private redisService: any;
   private tokenService: any ;
+  private notificationService: any ;
+
 
   constructor() {
     this.userRepo = new UserRepository();
     this.redisService = redisService;
     this.tokenService = tokenService;
+    this.notificationService = notificationService;
   
   }
 
@@ -45,6 +50,20 @@ class AuthService {
     });
     if (!isPasswordValid) {
       throw new BadRequestException("invalid email or password");
+    }
+
+    if(data.FCM_Token){
+      await this.redisService.setFCMToken(user._id , data.FCM_Token)
+      const tokens = await this.redisService.getFCMToken(user._id )
+      tokens.forEach(async (t:string) => {
+        await this.notificationService.sendNotification({
+          token:t,
+          title:"user login",
+          data:"user login"
+      })
+      });
+     
+
     }
 
    const {accessToken , refreshToken}= await  this.tokenService.createCredential(user)

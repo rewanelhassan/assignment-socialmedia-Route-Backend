@@ -1,5 +1,5 @@
 import { Gender, Role, System } from "../../common/enums"
-import {  HydratedDocument, model , Schema } from "mongoose"
+import {  HydratedDocument, model , Schema, Types } from "mongoose"
 import { IUser } from "../../common/interfaces/user.interface"
 import { hash } from  "../../common/utils/hash"
 import { encrypt } from "../../common/utils/encrypt"
@@ -64,6 +64,10 @@ const userSchema = new Schema<IUser>({
         type:String,
         enum:Object.values(System),
         default:System.SYSTEM
+    },
+    friends:{
+        type:[Types.ObjectId],
+        ref:"User"
     },
     coverImages:{
         type:String

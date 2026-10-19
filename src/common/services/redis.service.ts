@@ -6,11 +6,11 @@ export class RedisService {
   private redisClient: RedisClientType;
 
   constructor() {
-    config()
+    config();
     this.redisClient = createClient({
       url: process.env.REDIS_URL! as string,
     });
-    this.handleEvent()
+    this.handleEvent();
   }
 
   public async connection() {
@@ -22,10 +22,10 @@ export class RedisService {
     }
   }
 
-  private handleEvent(){
-    this.redisClient.on("error",(err)=>{
-        console.log({err})
-    })
+  private handleEvent() {
+    this.redisClient.on("error", (err) => {
+      console.log({ err });
+    });
   }
 
   prefixTokenKey = ({ userId }: { userId: string }) => {
@@ -97,8 +97,22 @@ export class RedisService {
   async keys(prefix: string) {
     return await this.redisClient.keys(prefix);
   }
+
+  FCMTokenKey = (user_id: string) => {
+    return `FCM:${user_id}`;
+  };
+
+  setFCMToken = async (user_id: string, token: string) => {
+    return await this.redisClient.sAdd(this.FCMTokenKey(user_id), token);
+  };
+  getFCMToken = async (user_id: string) => {
+    return await this.redisClient.sMembers(this.FCMTokenKey(user_id));
+  };
+  deleteFCMToken = async (user_id: string, token: string) => {
+    await this.redisClient.sRem(this.FCMTokenKey(user_id), token);
+  };
 }
 
-const redisService = new RedisService() 
+const redisService = new RedisService();
 
-export  default redisService
+export default redisService;

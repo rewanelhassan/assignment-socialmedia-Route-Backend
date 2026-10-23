@@ -11,6 +11,8 @@ import { pipeline } from "node:stream/promises";
 import cors from "cors";
 import notificationService from "./common/services/notification.service";
 import postRouter from "./modules/post/post.controller";
+import { schema } from "./modules/graphql/schema.gql";
+import { createHandler } from "graphql-http/lib/use/express";
 
 const bootstrap = async () => {
   config();
@@ -18,8 +20,8 @@ const bootstrap = async () => {
   app.use(express.json());
   app.use(cors());
 
-  await DBconnection();
-  await redisService.connection();
+  // await DBconnection();
+  // await redisService.connection();
 
   app.use(
     "/uploads/*path",
@@ -66,7 +68,7 @@ const bootstrap = async () => {
 
   // app.post("/", async (req: Request, res: Response, next: NextFunction) => {
   //   console.log({token :req.body });
-     
+
   //   await notificationService.sendNotification({
   //     token: req.body.token,
   //     title: "test",
@@ -76,7 +78,6 @@ const bootstrap = async () => {
   //     message: "hello TS",
   //   });
   // });
- 
 
   app.get("/", (req: Request, res: Response, next: NextFunction): void => {
     res.status(200).json({
@@ -87,6 +88,9 @@ const bootstrap = async () => {
   app.use("/auth", authRouter);
   app.use("/user", userRouter);
   app.use("/post", postRouter);
+
+  
+  app.all("/graphql",createHandler({schema}) )
   app.use(globalError);
 
   app.listen(8000, () => {

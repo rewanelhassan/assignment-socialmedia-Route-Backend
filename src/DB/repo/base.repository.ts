@@ -12,6 +12,7 @@ import {
   MongooseUpdateQueryOptions,
   UpdateResult,
   DeleteResult,
+  UpdateWithAggregationPipeline,
 } from "mongoose";
 
 export abstract class BaseRepository<T> {
@@ -149,9 +150,16 @@ export abstract class BaseRepository<T> {
     options = { new: true },
   }: {
     filter: QueryFilter<T>;
-    update?: UpdateQuery<T>;
+    update?: UpdateQuery<T>| UpdateWithAggregationPipeline;
     options?: QueryOptions<T> | null;
   }): Promise<HydratedDocument<T> | FlattenMaps<T> | null> {
+    if(Array.isArray(update)){
+        return this.model.findOneAndUpdate(filter, update ,{
+          ...options,
+          updatePipeline:true
+
+        })
+    }
     const doc = this.model.findOneAndUpdate(filter, update, options);
     if (options?.lean) {
       doc.lean() as FlattenMaps<T>;

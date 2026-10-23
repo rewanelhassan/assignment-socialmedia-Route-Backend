@@ -11,12 +11,14 @@ import { validation } from "../../middlewars/validation.middleware";
  
 import { StorageTypeEnum } from "../../common/enums/storage";
 import { postService } from "./post.service";
-import { createPostSchema } from "./post.validation";
-import { ICreatePost } from "./dto/post.dto";
+import { createPostSchema, reactPostSchema, updatePostSchema } from "./post.validation";
+import { ICreatePost, IUpdatePost } from "./dto/post.dto";
 import { paginationQuery, paginationQuerySchema } from "../../common/utils/general-validation";
+import { commentRouter } from "../comment/comment.controller";
  
 
 const postRouter = Router();
+postRouter.use(":id/comment",commentRouter)
  
 postRouter.post(
  
@@ -54,7 +56,47 @@ postRouter.get(
     ); 
     return successResponse({ res, data: posts });
   },
+); 
+postRouter.patch(
+ 
+  "/:id",
+  auth,
+  cloudUpload({
+    folder: "post",
+    maxSize: 5,
+    StorageType: StorageTypeEnum.DISK,
+    fileValidation: fileValidation.images,
+  }).array("attachment",5),
+  validation(updatePostSchema),
+  async (req, res, next) => {
+    const postId = req.params.id as string
+    const body = req.body as IUpdatePost 
+    const files = req.files as  Express.Multer.File[]
+    const user = await postService.update(
+      postId,
+      body,
+      req.user!,
+      StorageTypeEnum.DISK,
+      files,
+    ); 
+    return successResponse({ res, data: user });
+  },
 );
+postRouter.patch(
+ 
+  "/:id/react",
+  auth,
+  validation(reactPostSchema),
+  async (req, res, next) => {
+    const postId = req.params.id as string
+    const post = await postService.reactPost(
+      postId,
+      req.user!,
+    ); 
+    return successResponse({ res, data: post });
+  },
+);
+
 
 
 export default postRouter;

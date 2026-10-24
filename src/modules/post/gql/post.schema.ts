@@ -1,8 +1,8 @@
 import { GraphQLString } from "graphql";
 import { postResolver } from "./post.resolver";
 import { resolve } from "node:dns";
-import { getPostArgs } from "./post.args";
-import { PostsGQLResponse } from "./post.types";
+import { getPostArgs, reactOnPostArgs } from "./post.args";
+import { postGQLResponse, PostsGQLResponse } from "./post.types";
 
 class PostSchema {
     private postResolver ;
@@ -20,7 +20,13 @@ class PostSchema {
   }
 
   registerMutition() {
-    return {};
+    return {
+        reactOnPost:{
+            type:postGQLResponse,
+            args:reactOnPostArgs,
+            resolve:this.postResolver.reactOnPost,
+        }
+    };
   }
 }
 

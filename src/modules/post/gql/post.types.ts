@@ -6,6 +6,7 @@ export const postGQLResponse = new GraphQLObjectType({
         _id:{type:new GraphQLNonNull(GraphQLID) },
         content:{type:GraphQLString},
         attachment:{type:new GraphQLList(GraphQLString) },
+        likes:{type:new GraphQLList(GraphQLID) },
         available:{type: GraphQLString },
     }
 

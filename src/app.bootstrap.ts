@@ -13,6 +13,7 @@ import notificationService from "./common/services/notification.service";
 import postRouter from "./modules/post/post.controller";
 import { schema } from "./modules/graphql/schema.gql";
 import { createHandler } from "graphql-http/lib/use/express";
+import { auth } from "./middlewars/auth.middleware";
 
 const bootstrap = async () => {
   config();
@@ -89,8 +90,7 @@ const bootstrap = async () => {
   app.use("/user", userRouter);
   app.use("/post", postRouter);
 
-  
-  app.all("/graphql",createHandler({schema}) )
+  app.all("/graphql",auth, createHandler({ schema, context: (req) => ({ user:req.raw.user,decoded:req.raw.decoded }) }));
   app.use(globalError);
 
   app.listen(8000, () => {

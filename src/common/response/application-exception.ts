@@ -1,9 +1,22 @@
+import { GraphQLError } from "graphql";
+
 export abstract class ApplicationException extends Error{
     public statusCode: number ;
     constructor(message:string ,statusCode:number , cause?:unknown){
         super(message, {cause});
         this.statusCode = statusCode ;
     }
+
+}
+
+export const MapGQLError = (error:ApplicationException)=>{
+     throw new GraphQLError(error.message || "internal server error", {
+          extensions: {
+            statusCode:error.statusCode,
+            cause:error.cause,
+             
+          },
+        });
 
 }
 

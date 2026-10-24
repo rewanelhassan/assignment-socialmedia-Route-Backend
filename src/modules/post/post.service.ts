@@ -10,6 +10,7 @@ import s3Service from "../../common/services/s3.service";
 import notificationService from "../../common/services/notification.service";
 import { paginationQuery } from "../../common/utils/general-validation";
 import { AvailableEnum } from "../../common/enums/available";
+import { MapGQLError } from "../../common/response/application-exception";
 
 export class PostService {
   private postRepo: PostRepository;
@@ -23,6 +24,11 @@ export class PostService {
     this.redisService = redisService;
     this.s3service = s3Service;
     this.notificationService = notificationService;
+  }
+
+  findAll(filter:paginationQuery){
+    MapGQLError (new BadRequestException("invalid data here"))
+
   }
 
   async create(

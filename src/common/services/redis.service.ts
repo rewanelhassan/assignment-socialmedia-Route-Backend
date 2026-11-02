@@ -111,6 +111,19 @@ export class RedisService {
   deleteFCMToken = async (user_id: string, token: string) => {
     await this.redisClient.sRem(this.FCMTokenKey(user_id), token);
   };
+  socketKey = (user_id: string) => {
+    return `SOCKET:${user_id}`;
+  };
+
+  setSocket = async (user_id: string, socketId: string) => {
+    return await this.redisClient.sAdd(this.socketKey(user_id), socketId);
+  };
+  getSockets = async (user_id: string) => {
+    return await this.redisClient.sMembers(this.socketKey(user_id));
+  };
+  deleteSockets = async (user_id: string, socketId: string) => {
+    await this.redisClient.sRem(this.socketKey(user_id), socketId);
+  };
 }
 
 const redisService = new RedisService();

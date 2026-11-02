@@ -2,7 +2,9 @@ import express, { Request, Response, NextFunction } from "express";
 import { type Express } from "express";
 import { authRouter } from "./modules";
 import { userRouter } from "./modules";
-import { globalError } from "./common/response";
+import {
+  globalError,
+} from "./common/response";
 import { config } from "dotenv";
 import { DBconnection } from "./DB/connection";
 import redisService from "./common/services/redis.service";
@@ -14,6 +16,8 @@ import postRouter from "./modules/post/post.controller";
 import { schema } from "./modules/graphql/schema.gql";
 import { createHandler } from "graphql-http/lib/use/express";
 import { auth } from "./middlewars/auth.middleware";
+import { realTimeGateway } from "./modules/realtime/realtime.gateway";
+import { chatRouter } from "./modules/chat/chat.controller";
 
 const bootstrap = async () => {
   config();
@@ -89,13 +93,24 @@ const bootstrap = async () => {
   app.use("/auth", authRouter);
   app.use("/user", userRouter);
   app.use("/post", postRouter);
+  app.use("/chat", chatRouter);
 
-  app.all("/graphql",auth, createHandler({ schema, context: (req) => ({ user:req.raw.user,decoded:req.raw.decoded }) }));
+  app.all(
+    "/graphql",
+    auth,
+    createHandler({
+      schema,
+      context: (req) => ({ user: req.raw.user, decoded: req.raw.decoded }),
+    }),
+  );
   app.use(globalError);
 
-  app.listen(8000, () => {
+  const httpServer = app.listen(8000, () => {
     console.log("sever is working.......");
   });
+
+ await realTimeGateway.initialize(httpServer)
+
   console.log("app is running");
 };
 

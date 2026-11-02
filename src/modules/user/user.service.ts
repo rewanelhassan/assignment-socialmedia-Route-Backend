@@ -1,22 +1,34 @@
-import { HydratedDocument } from "mongoose";
+import { HydratedDocument, Types } from "mongoose";
 import { IUser } from "../../common/interfaces/user.interface";
 import redisService from "../../common/services/redis.service";
 import { UserRepository } from "../../DB/repo/user.repository";
 import { UserHydrated } from "../../DB/models/user.model";
 import s3Service from "../../common/services/s3.service";
 import { StorageTypeEnum } from "../../common/enums/storage";
+import { ChatRepository } from "../../DB/repo/chat.repository";
+import { IChat } from "../../common/interfaces/chat.interface";
 
 class UserService {
   private userRepo: UserRepository;
   private redisService;
   private s3Service;
+  private chatRepo;
   constructor() {
     this.userRepo = new UserRepository();
     this.redisService = redisService;
     this.s3Service = s3Service;
+    this.chatRepo = new ChatRepository()
   }
-  profile(data: HydratedDocument<IUser>): HydratedDocument<IUser> {
-    return data;
+  async profile(data: HydratedDocument<IUser>): Promise<{user:HydratedDocument<IUser> ,groups:HydratedDocument<IChat>[]}> {
+
+    const groups = await this.chatRepo.find({
+      filter:{
+        participants:{
+          $in:[new Types.ObjectId(data._id)]
+        }
+      }
+    })
+    return {user:data , groups} ;
   }
 
   logOut = async (

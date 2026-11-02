@@ -40,7 +40,11 @@ export const auth = async (req: IAuthRequest, res: Response, next: NextFunction)
     throw new NotFoundException("user not found");
   }
 
-  const user = await userRepo.findOne({ filter: { _id: decoded.sub } });
+  const user = await userRepo.findOne({ filter: { _id: decoded.sub },projection:{}, options:{
+    lean:false,
+    populate:"friends",
+
+  } });
   if (!user) {
     throw new NotFoundException("user not found");
   }

@@ -14,15 +14,17 @@ import { cloudUpload } from "../../common/utils/cloud-multer";
 import { validation } from "../../middlewars/validation.middleware";
 import { updateUserImage } from "./user.validation";
 import { StorageTypeEnum } from "../../common/enums/storage";
+import { chatRouter } from "../chat/chat.controller";
 
 const userRouter = Router();
+userRouter.use("/:userId/chat" , chatRouter)
 
 userRouter.get(
-  "/",
+  "/profile",
   auth,
-  authorization(Role.USER),
-  (req: IAuthRequest, res: Response, next: NextFunction) => {
-    const user = userService.profile(req.user as HydratedDocument<IUser>);
+  // authorization(Role.USER),
+  async (req: IAuthRequest, res: Response, next: NextFunction) => {
+    const user = await userService.profile(req.user as HydratedDocument<IUser>);
     return successResponse({ res, status: 200, data: user });
   },
 );

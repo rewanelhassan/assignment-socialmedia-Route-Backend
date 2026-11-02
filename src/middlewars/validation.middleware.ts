@@ -66,3 +66,20 @@ export const GQLValidation = <T>(schema: ZodType, args: T) => {
     });
   }
 };
+
+
+export const SocketValidation = <T>(schema: ZodType, args: T) => {
+  const result = schema.safeParse(args);
+  const errors = result.error as ZodError;
+
+  if (!result.success) {
+    throw new BadRequestException("validation Error", {
+        cause: errors.issues.map((err) => {
+          return {
+            path: err.path,
+            message: err.message,
+          };
+        }),
+    });
+  }
+};
